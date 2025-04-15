@@ -3,24 +3,33 @@ const axios = require('axios');
 exports.handler = async (event) => {
   // 1. Authorization Code feldolgozása
   const { code } = event.queryStringParameters;
-  
+
   if (!code) {
-    return { statusCode: 400, body: "Missing authorization code" };
+    return {
+      statusCode: 400,
+      body: "Missing authorization code"
+    };
   }
 
   // 2. Token kérés a Pinterest API-tól
   try {
-    const response = await axios.post('https://api.pinterest.com/v5/oauth/token', {
-      client_id: process.env.1518240,
-      client_secret: process.env.PINTEREST_APP_SECRET,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: `https://${process.env.URL}/.netlify/functions/pinterest`
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const response = await axios.post(
+      'https://api.pinterest.com/v5/oauth/token',
+      {
+        client_id: process.env.PINTEREST_CLIENT_ID,
+        client_secret: process.env.PINTEREST_APP_SECRET,
+        code,
+        grant_type: 'authorization_code',
+        redirect_uri: `https://${process.env.URL}/.netlify/functions/pinterest`
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
 
-    // 3. Sikeres válasz
+    // 3. Sikeres válasz visszaadása
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -29,7 +38,7 @@ exports.handler = async (event) => {
         expires_in: response.data.expires_in
       })
     };
-    
+
   } catch (error) {
     // 4. Hiba kezelése
     return {
