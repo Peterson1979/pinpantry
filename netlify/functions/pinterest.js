@@ -11,7 +11,7 @@ exports.handler = async (event) => {
   // 2. Token kérés a Pinterest API-tól
   try {
     const response = await axios.post('https://api.pinterest.com/v5/oauth/token', {
-      client_id: process.env.PINTEREST_APP_ID,
+      client_id: process.env.1518240,
       client_secret: process.env.PINTEREST_APP_SECRET,
       code,
       grant_type: 'authorization_code',
