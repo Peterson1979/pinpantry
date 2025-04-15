@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PinPantry - Turn Pinterest Recipes into Shopping Lists</title>
+    <title>PinPantry - Pinterest Recipe Parser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #2B6CB0;
@@ -64,24 +65,6 @@
             margin-bottom: 30px;
         }
         
-        .input-method {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--gray-light);
-        }
-        
-        .input-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-        }
-        
-        .input-tab.active {
-            border-bottom: 3px solid var(--primary);
-            font-weight: bold;
-            color: var(--primary);
-        }
-        
         .upload-area {
             border: 2px dashed var(--primary-light);
             border-radius: 8px;
@@ -95,15 +78,6 @@
         .upload-area:hover {
             background-color: var(--primary-lighter);
             border-color: var(--primary);
-        }
-        
-        .url-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--gray-light);
-            border-radius: 6px;
-            font-size: 1rem;
-            margin-bottom: 15px;
         }
         
         .upload-icon {
@@ -121,20 +95,22 @@
             font-size: 1rem;
             cursor: pointer;
             transition: background-color 0.3s;
-            display: inline-block;
-            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px;
         }
         
         .btn:hover {
             background-color: var(--primary-dark);
         }
         
-        .btn-accent {
-            background-color: var(--accent);
+        .btn-pinterest {
+            background-color: #E60023;
         }
         
-        .btn-accent:hover {
-            opacity: 0.9;
+        .btn-export {
+            background-color: var(--accent);
         }
         
         .serving-control {
@@ -172,31 +148,31 @@
             border-bottom: none;
         }
         
-        .actions {
+        .action-buttons {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-top: 20px;
         }
         
         .share-buttons {
             display: flex;
+            align-items: center;
             gap: 10px;
+            margin-top: 20px;
         }
         
         .share-btn {
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px;
+            border-radius: 50%;
             color: white;
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
+            justify-content: center;
             text-decoration: none;
         }
-        
-        .pinterest { background-color: #E60023; }
-        .facebook { background-color: #1877F2; }
-        .twitter { background-color: #1DA1F2; }
         
         .hidden {
             display: none;
@@ -234,22 +210,8 @@
                 padding: 15px;
             }
             
-            h1 {
-                font-size: 2rem;
-            }
-            
-            .input-method {
+            .action-buttons {
                 flex-direction: column;
-                border-bottom: none;
-            }
-            
-            .input-tab {
-                border-bottom: 1px solid var(--gray-light);
-            }
-            
-            .actions {
-                flex-direction: column;
-                gap: 10px;
             }
             
             .share-buttons {
@@ -263,24 +225,11 @@
         <header>
             <div class="logo">PinPantry</div>
             <h1>Recipe Ingredient Parser</h1>
-            <p class="tagline">Turn Pinterest recipes into shopping lists in seconds!</p>
+            <p class="tagline">Turn Pinterest recipe pins into shopping lists in seconds!</p>
         </header>
         
         <div class="card">
-            <div class="input-method">
-                <div class="input-tab active" id="url-tab">Pinterest URL</div>
-                <div class="input-tab" id="screenshot-tab">Screenshot</div>
-            </div>
-            
-            <div id="url-section">
-                <input type="text" class="url-input" id="pinterest-url" placeholder="Paste Pinterest recipe URL here...">
-                <div style="text-align: center;">
-                    <button class="btn" id="fetch-btn">Get Ingredients</button>
-                    <button class="btn btn-accent" id="demo-btn">Try Demo</button>
-                </div>
-            </div>
-            
-            <div id="screenshot-section" class="hidden">
+            <div id="upload-section">
                 <div class="upload-area" id="drop-area">
                     <div class="upload-icon">📌</div>
                     <h3>Upload Pinterest Recipe Screenshot</h3>
@@ -288,19 +237,20 @@
                     <input type="file" id="file-input" accept="image/*" style="display: none;">
                     <button class="btn" onclick="document.getElementById('file-input').click()">Choose Image</button>
                 </div>
+                <p style="text-align: center; color: var(--gray);">or</p>
+                <button id="pinterest-login" class="btn btn-pinterest">
+                    <i class="fab fa-pinterest"></i> Connect Pinterest Account
+                </button>
             </div>
             
             <div id="loading-section" class="hidden">
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p id="loading-text">Scanning your recipe for ingredients...</p>
+                    <p>Scanning your recipe for ingredients...</p>
                 </div>
             </div>
             
             <div id="results-section" class="hidden">
-                <h2 id="recipe-title"></h2>
-                <p id="recipe-description" style="color: var(--gray);"></p>
-                
                 <div class="serving-control">
                     <label for="servings">Adjust servings:</label>
                     <input type="number" id="servings" min="1" value="4">
@@ -311,80 +261,72 @@
                     <!-- Ingredients will be added here dynamically -->
                 </ul>
                 
-                <div class="actions">
-                    <button class="btn" id="copy-btn">Copy List</button>
-                    <div class="share-buttons">
-                        <a href="#" class="share-btn pinterest" id="pinterest-share">Pinterest</a>
-                        <a href="#" class="share-btn facebook" id="facebook-share">Facebook</a>
-                        <a href="#" class="share-btn twitter" id="twitter-share">Twitter</a>
-                    </div>
+                <div class="action-buttons">
+                    <button class="btn" id="copy-btn">
+                        <i class="fas fa-copy"></i> Copy List
+                    </button>
+                    <button class="btn btn-export" id="export-txt">
+                        <i class="fas fa-file-alt"></i> Export as Text
+                    </button>
+                    <button class="btn btn-export" id="export-img">
+                        <i class="fas fa-image"></i> Export as Image
+                    </button>
+                </div>
+                
+                <div class="share-buttons">
+                    <span>Share:</span>
+                    <a href="#" class="share-btn" id="share-link" style="background-color: var(--gray);">
+                        <i class="fas fa-link"></i>
+                    </a>
+                    <a href="#" class="share-btn" id="share-pinterest" style="background-color: #E60023;">
+                        <i class="fab fa-pinterest"></i>
+                    </a>
+                    <a href="#" class="share-btn" id="share-facebook" style="background-color: #1877F2;">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="share-btn" id="share-twitter" style="background-color: #1DA1F2;">
+                        <i class="fab fa-twitter"></i>
+                    </a>
                 </div>
             </div>
         </div>
         
-        <div class="card">
-            <h3>How it works</h3>
-            <ol>
-                <li><strong>Enter a Pinterest URL</strong> or <strong>upload a screenshot</strong> of any recipe pin</li>
-                <li>We'll extract the ingredients automatically</li>
-                <li><strong>Adjust servings</strong> to scale quantities</li>
-                <li><strong>Copy or share</strong> your shopping list</li>
-            </ol>
-            
-            <h3 style="margin-top: 20px;">Pro Tips</h3>
-            <ul>
-                <li>For best results with URLs, use pins that have clear ingredient lists in the description</li>
-                <li>When using screenshots, crop to focus on just the ingredients</li>
-                <li>Save time by sharing directly to your favorite grocery app</li>
-            </ul>
-        </div>
-        
         <footer>
-            <p>Made with ❤️ for food lovers | PinPantry v1.0</p>
+            <p>Made with ❤️ for food lovers | PinPantry v2.0</p>
         </footer>
     </div>
 
     <script>
         // DOM Elements
-        const urlTab = document.getElementById('url-tab');
-        const screenshotTab = document.getElementById('screenshot-tab');
-        const urlSection = document.getElementById('url-section');
-        const screenshotSection = document.getElementById('screenshot-section');
         const fileInput = document.getElementById('file-input');
         const dropArea = document.getElementById('drop-area');
-        const pinterestUrl = document.getElementById('pinterest-url');
-        const fetchBtn = document.getElementById('fetch-btn');
-        const demoBtn = document.getElementById('demo-btn');
+        const pinterestLogin = document.getElementById('pinterest-login');
         const uploadSection = document.getElementById('upload-section');
         const loadingSection = document.getElementById('loading-section');
-        const loadingText = document.getElementById('loading-text');
         const resultsSection = document.getElementById('results-section');
-        const recipeTitle = document.getElementById('recipe-title');
-        const recipeDescription = document.getElementById('recipe-description');
         const ingredientsList = document.getElementById('ingredients-list');
         const servingsInput = document.getElementById('servings');
         const copyBtn = document.getElementById('copy-btn');
+        const exportTxtBtn = document.getElementById('export-txt');
+        const exportImgBtn = document.getElementById('export-img');
+        const shareLinkBtn = document.getElementById('share-link');
+        const sharePinterestBtn = document.getElementById('share-pinterest');
+        const shareFacebookBtn = document.getElementById('share-facebook');
+        const shareTwitterBtn = document.getElementById('share-twitter');
         
         // Sample data for demo
-        const demoRecipe = {
-            title: "Easy Pancake Recipe",
-            description: "Fluffy homemade pancakes perfect for weekend brunch",
-            ingredients: [
-                { name: "All-purpose flour", amount: "2", unit: "cups" },
-                { name: "Sugar", amount: "1", unit: "cup" },
-                { name: "Baking powder", amount: "1", unit: "tbsp" },
-                { name: "Salt", amount: "1/2", unit: "tsp" },
-                { name: "Milk", amount: "1", unit: "cup" },
-                { name: "Eggs", amount: "2", unit: "" },
-                { name: "Butter", amount: "1/4", unit: "cup", note: "melted" },
-                { name: "Vanilla extract", amount: "1", unit: "tsp" }
-            ],
-            originalServings: 4
-        };
+        const demoIngredients = [
+            { name: "All-purpose flour", amount: "2", unit: "cups" },
+            { name: "Sugar", amount: "1", unit: "cup" },
+            { name: "Baking powder", amount: "1", unit: "tbsp" },
+            { name: "Salt", amount: "1/2", unit: "tsp" },
+            { name: "Milk", amount: "1", unit: "cup" },
+            { name: "Eggs", amount: "2", unit: "" },
+            { name: "Butter", amount: "1/4", unit: "cup", note: "melted" },
+            { name: "Vanilla extract", amount: "1", unit: "tsp" }
+        ];
         
         // Event Listeners
-        urlTab.addEventListener('click', () => switchTab('url'));
-        screenshotTab.addEventListener('click', () => switchTab('screenshot'));
         fileInput.addEventListener('change', handleFiles);
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -401,31 +343,17 @@
                 handleFiles();
             }
         });
-        fetchBtn.addEventListener('click', fetchFromPinterest);
-        demoBtn.addEventListener('click', runDemo);
+        pinterestLogin.addEventListener('click', connectPinterest);
         servingsInput.addEventListener('change', updateServings);
         copyBtn.addEventListener('click', copyList);
-        
-        // Set up share buttons
-        document.getElementById('pinterest-share').addEventListener('click', shareToPinterest);
-        document.getElementById('facebook-share').addEventListener('click', shareToFacebook);
-        document.getElementById('twitter-share').addEventListener('click', shareToTwitter);
+        exportTxtBtn.addEventListener('click', exportAsText);
+        exportImgBtn.addEventListener('click', exportAsImage);
+        shareLinkBtn.addEventListener('click', shareLink);
+        sharePinterestBtn.addEventListener('click', shareToPinterest);
+        shareFacebookBtn.addEventListener('click', shareToFacebook);
+        shareTwitterBtn.addEventListener('click', shareToTwitter);
         
         // Functions
-        function switchTab(tab) {
-            if (tab === 'url') {
-                urlTab.classList.add('active');
-                screenshotTab.classList.remove('active');
-                urlSection.classList.remove('hidden');
-                screenshotSection.classList.add('hidden');
-            } else {
-                urlTab.classList.remove('active');
-                screenshotTab.classList.add('active');
-                urlSection.classList.add('hidden');
-                screenshotSection.classList.remove('hidden');
-            }
-        }
-        
         function handleFiles() {
             if (fileInput.files.length) {
                 processImage();
@@ -433,93 +361,25 @@
         }
         
         function processImage() {
-            // In a real app, this would send the image to an OCR/ML API
-            loadingText.textContent = "Scanning your screenshot for ingredients...";
-            urlSection.classList.add('hidden');
-            screenshotSection.classList.add('hidden');
+            uploadSection.classList.add('hidden');
             loadingSection.classList.remove('hidden');
             
             setTimeout(() => {
                 loadingSection.classList.add('hidden');
                 resultsSection.classList.remove('hidden');
-                displayRecipe(demoRecipe); // Using demo data
+                displayIngredients(demoIngredients);
             }, 2000);
         }
         
-        function fetchFromPinterest() {
-            const url = pinterestUrl.value.trim();
-            
-            if (!url) {
-                alert("Please enter a Pinterest URL");
-                return;
-            }
-            
-            if (!url.includes('pinterest.com')) {
-                alert("Please enter a valid Pinterest URL");
-                return;
-            }
-            
-            // In a real app, this would call your backend which uses Pinterest API
-            loadingText.textContent = "Fetching recipe from Pinterest...";
-            urlSection.classList.add('hidden');
-            loadingSection.classList.remove('hidden');
-            
-            // Simulate API call delay
-            setTimeout(() => {
-                // This is where you would process the actual API response
-                // For demo, we'll use sample data and pretend it came from the URL
-                const simulatedResponse = {
-                    success: true,
-                    data: {
-                        title: "Chocolate Chip Cookies",
-                        description: "Classic cookie recipe with melty chocolate chips",
-                        ingredients: [
-                            { name: "All-purpose flour", amount: "2.25", unit: "cups" },
-                            { name: "Baking soda", amount: "1", unit: "tsp" },
-                            { name: "Salt", amount: "1", unit: "tsp" },
-                            { name: "Unsalted butter", amount: "1", unit: "cup", note: "room temperature" },
-                            { name: "Brown sugar", amount: "3/4", unit: "cup" },
-                            { name: "Granulated sugar", amount: "3/4", unit: "cup" },
-                            { name: "Vanilla extract", amount: "1", unit: "tsp" },
-                            { name: "Eggs", amount: "2", unit: "" },
-                            { name: "Chocolate chips", amount: "2", unit: "cups" }
-                        ],
-                        originalServings: 24
-                    }
-                };
-                
-                if (simulatedResponse.success) {
-                    loadingSection.classList.add('hidden');
-                    resultsSection.classList.remove('hidden');
-                    displayRecipe(simulatedResponse.data);
-                    servingsInput.value = simulatedResponse.data.originalServings;
-                } else {
-                    loadingSection.classList.add('hidden');
-                    urlSection.classList.remove('hidden');
-                    alert("Couldn't fetch recipe from that URL. Try a different pin or use a screenshot.");
-                }
-            }, 1500);
+        function connectPinterest() {
+            const clientId = 'YOUR_PINTEREST_APP_ID'; // Replace with Netlify env variable in production
+            const redirectUri = encodeURIComponent(`${window.location.origin}/.netlify/functions/pinterest`);
+            window.location.href = `https://www.pinterest.com/oauth/?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=boards:read,pins:read`;
         }
         
-        function runDemo() {
-            loadingText.textContent = "Loading demo recipe...";
-            urlSection.classList.add('hidden');
-            loadingSection.classList.remove('hidden');
-            
-            setTimeout(() => {
-                loadingSection.classList.add('hidden');
-                resultsSection.classList.remove('hidden');
-                displayRecipe(demoRecipe);
-                servingsInput.value = demoRecipe.originalServings;
-            }, 800);
-        }
-        
-        function displayRecipe(recipe) {
-            recipeTitle.textContent = recipe.title;
-            recipeDescription.textContent = recipe.description;
+        function displayIngredients(ingredients) {
             ingredientsList.innerHTML = '';
-            
-            recipe.ingredients.forEach(ing => {
+            ingredients.forEach(ing => {
                 const li = document.createElement('li');
                 li.className = 'ingredient-item';
                 
@@ -536,21 +396,17 @@
                 li.appendChild(nameSpan);
                 ingredientsList.appendChild(li);
             });
-            
-            // Store original servings for calculations
-            servingsInput.dataset.originalServings = recipe.originalServings;
         }
         
         function updateServings() {
             const newServings = parseInt(servingsInput.value);
-            const originalServings = parseInt(servingsInput.dataset.originalServings) || 4;
+            const originalServings = 4;
             
             if (newServings > 0) {
                 const amountElements = document.querySelectorAll('.ingredient-amount');
                 amountElements.forEach(el => {
                     const originalAmount = el.dataset.originalAmount;
                     
-                    // Simple fraction handling
                     if (originalAmount.includes('/')) {
                         const [numerator, denominator] = originalAmount.split('/');
                         const decimal = parseInt(numerator) / parseInt(denominator);
@@ -568,17 +424,12 @@
             const tolerance = 1.0E-6;
             const fractions = [
                 [0, ''],
-                [1/8, '1/8'],
                 [1/4, '1/4'],
                 [1/3, '1/3'],
                 [1/2, '1/2'],
                 [2/3, '2/3'],
                 [3/4, '3/4'],
-                [1, '1'],
-                [1.25, '1 1/4'],
-                [1.5, '1 1/2'],
-                [1.75, '1 3/4'],
-                [2, '2']
+                [1, '1']
             ];
             
             for (let i = 0; i < fractions.length; i++) {
@@ -587,29 +438,52 @@
                 }
             }
             
-            // If no common fraction found, return as decimal
             return decimal.toFixed(2);
         }
         
         function copyList() {
-            const title = recipeTitle.textContent;
             const items = Array.from(document.querySelectorAll('.ingredient-item')).map(item => {
                 return item.textContent.replace(/\s+/g, ' ').trim();
             });
             
-            const textToCopy = `${title}\n\nShopping List:\n${items.join('\n')}`;
+            const textToCopy = items.join('\n');
             
             navigator.clipboard.writeText(textToCopy).then(() => {
                 copyBtn.textContent = 'Copied!';
                 setTimeout(() => {
-                    copyBtn.textContent = 'Copy List';
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copy List';
                 }, 2000);
+            });
+        }
+        
+        function exportAsText() {
+            const items = Array.from(document.querySelectorAll('.ingredient-item')).map(item => {
+                return item.textContent.replace(/\s+/g, ' ').trim();
+            });
+            
+            const blob = new Blob([items.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shopping-list.txt';
+            a.click();
+        }
+        
+        function exportAsImage() {
+            alert('Image export functionality will be implemented using html2canvas library');
+            // Implementation coming soon
+        }
+        
+        function shareLink(e) {
+            e.preventDefault();
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Link copied to clipboard!');
             });
         }
         
         function shareToPinterest(e) {
             e.preventDefault();
-            const url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&description=${encodeURIComponent('Check out this shopping list I made with PinPantry!')}`;
+            const url = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&description=${encodeURIComponent('Check out my shopping list from PinPantry!')}`;
             window.open(url, '_blank', 'width=750,height=750');
         }
         
@@ -621,8 +495,7 @@
         
         function shareToTwitter(e) {
             e.preventDefault();
-            const text = `I just created a shopping list from a Pinterest recipe using @PinPantry!`;
-            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent('I just created a shopping list with PinPantry!')}&url=${encodeURIComponent(window.location.href)}`;
             window.open(url, '_blank', 'width=600,height=400');
         }
     </script>
